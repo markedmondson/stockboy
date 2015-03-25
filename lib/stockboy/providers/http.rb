@@ -31,7 +31,7 @@ module Stockboy::Providers
     # @example
     #   post 'http://example.com/api/search'
     #
-    dsl_attr :post, attr_writer: false
+    dsl_attr :post, attr_accessor: false
 
     # HTTP method: +:get+ or +:post+
     #
@@ -105,6 +105,24 @@ module Stockboy::Providers
     #
     dsl_attr :query
 
+    def post_body
+      return nil unless post?
+      @post_body
+    end
+
+    def post_body=(post_body)
+      @post_body = post_body
+    end
+
+    # POST body for setting directly on a request
+    #
+    # @!attribute [rw] post_body
+    # @return [String]
+    # @example
+    #   post_body '<somexml>'
+    #
+    dsl_attr :post_body, attr_accessor: false, alias: :body
+
     def method=(http_method)
       return @method = nil unless %w(get post).include? http_method.to_s.downcase
       @method = http_method.to_s.downcase.to_sym
@@ -115,9 +133,12 @@ module Stockboy::Providers
       @uri = uri
     end
 
-    def post=(uri)
+    def post=(*attrs)
+      attrs = Array(attrs).flatten
+      options = attrs.last.is_a?(Hash) ? attrs.pop : {} # extract_options
       @method = :post
-      @uri = uri
+      @uri = attrs.first
+      @post_body = options[:body]
     end
 
     def username=(username)
@@ -147,6 +168,7 @@ module Stockboy::Providers
     def client
       orig_logger, HTTPI.logger = HTTPI.logger, logger
       req = HTTPI::Request.new.tap { |c| c.url = uri }
+      req.body = post_body if post_body
       req.auth.basic(username, password) if username && password
       req.headers = headers
       req.body = body
@@ -175,5 +197,8 @@ module Stockboy::Providers
       end
     end
 
+    def post?
+      method == :post
+    end
   end
 end
