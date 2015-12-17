@@ -135,9 +135,9 @@ module Stockboy::Providers
     def initialize(opts={}, &block)
       super(opts, &block)
       self.uri      = opts[:uri]
-      self.method   = opts[:method] || :get
-      self.query    = opts[:query]  || Hash.new
-      self.headers  = opts[:headers]  || Hash.new
+      self.method   = opts[:method]  || :get
+      self.query    = opts[:query]   || Hash.new
+      self.headers  = opts[:headers] || Hash.new
       self.body     = opts[:body]
       self.username = opts[:username]
       self.password = opts[:password]
@@ -149,7 +149,7 @@ module Stockboy::Providers
       req = HTTPI::Request.new.tap { |c| c.url = uri }
       req.auth.basic(username, password) if username && password
       req.headers = headers
-      req.body = body
+      req.body = body if body
       block_given? ? yield(req) : req
     ensure
       HTTPI.logger = orig_logger
